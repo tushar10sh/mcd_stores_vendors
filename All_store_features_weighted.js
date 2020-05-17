@@ -1,4 +1,4 @@
-var stores = {'features': [{'geometry': {'coordinates': [78.2091007, 13.1390712],
+var stores2 = {'features': [{'geometry': {'coordinates': [78.2091007, 13.1390712],
     'type': 'Point'},
    'id': 0,
    'properties': {'cluster_label': 1,
