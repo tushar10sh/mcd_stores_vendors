@@ -1,0 +1,113 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+
+	<title>GeoJSON tutorial - Leaflet</title>
+
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+	<link rel="shortcut icon" type="image/x-icon" href="docs/images/favicon.ico" />
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css" integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ==" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js" integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew==" crossorigin=""></script>
+
+
+	<style>
+		html, body {
+			height: 100%;
+			margin: 0;
+		}
+		#map {
+			width: 99vw;
+			height: 99vh;
+		}
+	</style>
+
+
+</head>
+<body>
+
+<div id='map'></div>
+
+<script src="All_store_features.js" type="text/javascript"></script>
+<script src="https://d3js.org/d3-interpolate.v1.min.js"></script>
+<script src="https://d3js.org/d3-scale.v3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chroma-js/2.1.0/chroma.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/numeral.js/2.0.6/numeral.min.js"></script>
+<script src="leaflet-bubble.js" type="text/javascript"></script>
+
+<script>
+	var map = L.map('map').setView([20, 78], 5);
+	var distintColors = ['#66cdaa', '#ffa500', '#00ff00', '#0000ff', '#1e90ff', '#ff1493']
+	L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw', {
+		maxZoom: 18,
+		attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, ' +
+			'<a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
+			'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+		id: 'mapbox/light-v9',
+		tileSize: 512,
+		zoomOffset: -1
+	}).addTo(map);
+
+
+	bubbles = L.bubbleLayer(stores, {
+	  property: "demand",
+	  legend: true,
+	  max_radius : 40,
+	  tooltip : true
+	});
+	bubbles.addTo(map);
+
+	function onEachFeature(feature, layer) {
+		var popupContent = "";
+
+		if (feature.properties && feature.properties.popupContent) {
+			popupContent += feature.properties.popupContent;
+		}
+
+		layer.bindPopup(popupContent);
+	}
+
+	L.geoJSON([stores], {
+
+		style: function (feature) {
+			return feature.properties && feature.properties.style;
+		},
+
+		onEachFeature: onEachFeature,
+
+		pointToLayer: function (feature, latlng) {
+			return L.circleMarker(latlng, {
+				radius: 8,
+				// fillColor: "#ff7800",
+				fillColor: distintColors[feature.properties.cluster_label],
+				color: "#000",
+				weight: 1,
+				opacity: 1,
+				fillOpacity: 0.8
+			});
+		}
+	}).addTo(map);
+
+
+var centers = [[12.97592004, 77.40604194],
+       [18.88698543, 73.25653099],
+       [17.73114314, 78.9736195 ],
+       [22.38886117, 73.01607468],
+       [10.10425529, 76.48182083],
+       [13.04514074, 80.12047723]];
+centers.forEach((item, i) => {
+	var m = L.marker(item);
+	m.addTo(map);
+	m.bindPopup("<p><strong>Lat: </strong> " + item[0] + ", <strong>Lon: </strong> " + item[1] + "</p>");
+});
+
+
+</script>
+
+
+
+</body>
+</html>
