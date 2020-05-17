@@ -11,7 +11,7 @@ from sklearn.cluster import KMeans
 import seaborn as sns; sns.set()
 import csv
 
-full_store_data = pd.read_excel("/home/tushar/Downloads/ALL_Store_Address.xlsx")
+full_store_data = pd.read_excel("./ALL_Store_Address.xlsx")
 full_store_data['Full_Address'] = full_store_data['Address'] + ", " + full_store_data['City'] + ", " + full_store_data['State'] + ", India"
 maps = googlemaps.Client(key='AIzaSyCBL_aZWLXwiSsHxYD2dftcRrxt3wzvKGI')
 
@@ -21,7 +21,7 @@ for i in range(len(full_store_data['Full_Address'])):
      full_store_data['Longitude'][i] = res[0]['geometry']['location']['lng']
 
 
-full_store_data.to_excel('/home/tushar/Downloads/ALL_Store_Address_withLatLon.xlsx')
+full_store_data.to_excel('./ALL_Store_Address_withLatLon.xlsx')
 features = { 'type': 'FeatureCollection', 'features': [] }
 
 
@@ -29,7 +29,7 @@ for i in range(len(full_store_data['Full_Address'])):
      features['features'].append( { 'geometry': { "type": "Point", "coordinates": [ full_store_data['Longitude'][i], full_store_data['Latitude'][i] ] }, "type": "Feature", "properties": { "popupContent": "<p> <strong>Address</strong> " + full_store_data['Full_Address'][i] +  "<br/>  <strong> Idx: </strong>" + str(i) + "  <br/> <strong> Demand: </strong> " + str(full_store_data['Demand'][i] ) + "</p>", "demand": full_store_data['Demand'][i], "cluster_label": full_store_data['Cluster'][i] }, "id": i } )
 
 
-with open("/home/tushar/Downloads/All_store_features.geojson", "w") as f:
+with open("./All_store_features.geojson", "w") as f:
     json.dump(features, f)
 
 
