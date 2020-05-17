@@ -12,7 +12,7 @@
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css" integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ==" crossorigin=""/>
     <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js" integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew==" crossorigin=""></script>
-
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
 
 	<style>
 		html, body {
@@ -20,7 +20,7 @@
 			margin: 0;
 		}
 		#map {
-			width: 99vw;
+			width: 100%;
 			height: 99vh;
 		}
 	</style>
@@ -29,9 +29,34 @@
 </head>
 <body>
 
-<div id='map'></div>
+<div class="container-fluid">
+	<div class="row">
+		<div class="col-md-2 mt-2 mb-2">
+			<strong>Choose data</strong>
+			</br>
+			<div class="dropdown">
+			  <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+			    Weighted K-means
+			  </button>
+			  <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+			    <a class="dropdown-item" href="#" id='weighted_btn'>Weighted K-means</a>
+			    <a class="dropdown-item" href="#" id='unweighted_btn'>Unweighted K-means</a>
+			  </div>
+			</div>
+		</div>
+		<div class="col-md-10">
+			<div id='map'></div>
+		</div>
+	</div>
+</div>
+<!-- <div id='map'></div> -->
 
 <!-- <script src="All_store_features.js" type="text/javascript"></script> -->
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+<script src="All_store_features.js" type="text/javascript"></script>
 <script src="All_store_features_weighted.js" type="text/javascript"></script>
 <script src="https://d3js.org/d3-interpolate.v1.min.js"></script>
 <script src="https://d3js.org/d3-scale.v3.min.js"></script>
@@ -40,8 +65,13 @@
 <script src="leaflet-bubble.js" type="text/javascript"></script>
 
 <script>
+	var virgin = true;
 	var map = L.map('map').setView([20, 78], 5);
-	var distintColors = ['#66cdaa', '#ffa500', '#00ff00', '#0000ff', '#1e90ff', '#ff1493']
+	var bubbles = undefined;
+	var storeLayer = undefined;
+	var centreLayers = [];
+	var distintColors = ['#66cdaa', '#ffa500', '#00ff00', '#0000ff', '#1e90ff', '#ff1493'];
+
 	L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw', {
 		maxZoom: 18,
 		attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, ' +
@@ -51,15 +81,6 @@
 		tileSize: 512,
 		zoomOffset: -1
 	}).addTo(map);
-
-
-	bubbles = L.bubbleLayer(stores, {
-	  property: "demand",
-	  legend: true,
-	  max_radius : 40,
-	  tooltip : true
-	});
-	bubbles.addTo(map);
 
 	function onEachFeature(feature, layer) {
 		var popupContent = "";
@@ -71,46 +92,136 @@
 		layer.bindPopup(popupContent);
 	}
 
-	L.geoJSON([stores], {
-
-		style: function (feature) {
-			return feature.properties && feature.properties.style;
-		},
-
-		onEachFeature: onEachFeature,
-
-		pointToLayer: function (feature, latlng) {
-			return L.circleMarker(latlng, {
-				radius: 8,
-				// fillColor: "#ff7800",
-				fillColor: distintColors[feature.properties.cluster_label],
-				color: "#000",
-				weight: 1,
-				opacity: 1,
-				fillOpacity: 0.8
-			});
+	var weightedFn = () => {
+		if ( bubbles !== undefined || bubbles ) {
+			// map.removeLayer(bubbles);
+			bubbles.remove();
 		}
-	}).addTo(map);
+		bubbles = L.bubbleLayer(stores1, {
+		  property: "demand",
+		  legend: virgin,
+		  max_radius : 40,
+		  tooltip : true
+		});
+		bubbles.addTo(map);
+
+		if ( storeLayer !== undefined || storeLayer) {
+			map.removeLayer(storeLayer);
+		}
+		storeLayer = L.geoJSON([stores1], {
+
+			style: function (feature) {
+				return feature.properties && feature.properties.style;
+			},
+
+			onEachFeature: onEachFeature,
+
+			pointToLayer: function (feature, latlng) {
+				return L.circleMarker(latlng, {
+					radius: 8,
+					// fillColor: "#ff7800",
+					fillColor: distintColors[feature.properties.cluster_label],
+					color: "#000",
+					weight: 1,
+					opacity: 1,
+					fillOpacity: 0.8
+				});
+			}
+		})
+		storeLayer.addTo(map);
+		if ( centreLayers.length > 0 ) {
+			centreLayers.forEach((item, i) => {
+				map.removeLayer(item);
+			});
+			centreLayers = [];
+		}
+		var centers = [[19.03027394, 73.16156128],
+		       [12.42113576, 77.27679475],
+		       [18.07571198, 79.30909916],
+		       [22.44164986, 73.20122116],
+		       [13.09502483, 80.12288296],
+		       [15.47236894, 74.30411156]];
+		centers.forEach((item, i) => {
+			var m = L.marker(item);
+			m.addTo(map);
+			m.bindPopup("<p><strong>Lat: </strong> " + item[0] + ", <strong>Lon: </strong> " + item[1] + "</p>");
+			centreLayers.push(m);
+		});
+	}
+
+	var unweightedFn = () => {
+		if ( bubbles !== undefined || bubbles ) {
+			// map.removeLayer(bubbles);
+			bubbles.remove();
+		}
+		bubbles = L.bubbleLayer(stores2, {
+			property: "demand",
+			legend: virgin,
+			max_radius : 40,
+			tooltip : true
+		});
+		bubbles.addTo(map);
 
 
-// var centers = [[12.97592004, 77.40604194],
-//        [18.88698543, 73.25653099],
-//        [17.73114314, 78.9736195 ],
-//        [22.38886117, 73.01607468],
-//        [10.10425529, 76.48182083],
-//        [13.04514074, 80.12047723]];
-var centers = [[19.03027394, 73.16156128],
-       [12.42113576, 77.27679475],
-       [18.07571198, 79.30909916],
-       [22.44164986, 73.20122116],
-       [13.09502483, 80.12288296],
-       [15.47236894, 74.30411156]];
-centers.forEach((item, i) => {
-	var m = L.marker(item);
-	m.addTo(map);
-	m.bindPopup("<p><strong>Lat: </strong> " + item[0] + ", <strong>Lon: </strong> " + item[1] + "</p>");
+		if ( storeLayer !== undefined || storeLayer) {
+			map.removeLayer(storeLayer);
+		}
+		storeLayer = L.geoJSON([stores2], {
+
+			style: function (feature) {
+				return feature.properties && feature.properties.style;
+			},
+
+			onEachFeature: onEachFeature,
+
+			pointToLayer: function (feature, latlng) {
+				return L.circleMarker(latlng, {
+					radius: 8,
+					// fillColor: "#ff7800",
+					fillColor: distintColors[feature.properties.cluster_label],
+					color: "#000",
+					weight: 1,
+					opacity: 1,
+					fillOpacity: 0.8
+				});
+			}
+		})
+		storeLayer.addTo(map);
+
+		if ( centreLayers.length > 0 ) {
+			centreLayers.forEach((item, i) => {
+				map.removeLayer(item);
+			});
+			centreLayers = [];
+		}
+
+		var centers = [[12.97592004, 77.40604194],
+		       [18.88698543, 73.25653099],
+		       [17.73114314, 78.9736195 ],
+		       [22.38886117, 73.01607468],
+		       [10.10425529, 76.48182083],
+		       [13.04514074, 80.12047723]];
+		centers.forEach((item, i) => {
+			var m = L.marker(item);
+			m.addTo(map);
+			m.bindPopup("<p><strong>Lat: </strong> " + item[0] + ", <strong>Lon: </strong> " + item[1] + "</p>");
+			centreLayers.push(m);
+		});
+	}
+
+$(document).ready(() => {
+	weightedFn();
+	$('#weighted_btn').on('click', () => {
+		$('#dropdownMenuButton')[0].innerHTML = "Weighted K-means";
+		virgin = false;
+		weightedFn();
+	});
+	$('#unweighted_btn').on('click', () => {
+		$('#dropdownMenuButton')[0].innerHTML = "Unweighted K-means";
+		virgin = false;
+		unweightedFn();
+	});
 });
-
 
 </script>
 
